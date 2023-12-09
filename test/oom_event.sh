@@ -45,8 +45,8 @@ function benchmark()
 }
 
 reset
-benchmark
-reset
+# benchmark
+# reset
 
 
 

@@ -13,6 +13,11 @@ struct
     __uint(max_entries, 256 * 1024 /* 256 KB */);
 } oom_event SEC(".maps");
 
+static inline bool is_memcg_oom(struct oom_control *oc)
+{
+    return oc->memcg != NULL;
+}
+
 SEC("kprobe/__oom_kill_process")
 int __oom_kill_process_entry(struct pt_regs *ctx)
 {
@@ -39,6 +44,14 @@ SEC("kprobe/out_of_memory")
 int out_of_memory_entry(struct pt_regs *ctx)
 {
     struct task_oom_info *info;
+    struct oom_control *oc;
+
+    oc = (struct oom_control *)PT_REGS_PARM1(ctx);
+    if (is_memcg_oom(oc))
+    {
+        return 0;
+    }
+
     u64 tgid = bpf_get_current_pid_tgid();
 
     info = bpf_ringbuf_reserve(&oom_event, sizeof(*info), 0);
